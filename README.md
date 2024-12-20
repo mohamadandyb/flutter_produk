@@ -5,9 +5,13 @@ Preview
 
 
 Nama : Mohamad Andy Baharuddin
+
 NIM : 230101020035
+
 Kelas : SI702
+
 Mata Kuliah : Pemrograman Berbasis Perangkat Bergerak
+
 
 
 ## Getting Started
