@@ -1,3 +1,4 @@
+import 'dart:convert';  // Import dart:convert untuk JSON encoding
 import 'package:app_produk/halaman_supplier.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -10,20 +11,35 @@ class TambahSupplier extends StatefulWidget {
 }
 
 class _TambahSupplierState extends State<TambahSupplier> {
-  final formKey = GlobalKey<FormState>(); // Perbaikan: mendefinisikan formKey
+  final formKey = GlobalKey<FormState>(); // Mendefinisikan formKey
   TextEditingController nama_supplier = TextEditingController();
   TextEditingController alamat = TextEditingController();
   TextEditingController no_telepon = TextEditingController();
 
   Future<bool> _simpan() async {
-    final respon = await http.post(
+    try {
+      final response = await http.post(
         Uri.parse('http://10.0.2.2/api_mobile/supplier/create.php'),
-        body: {
+        headers: {
+          'Content-Type': 'application/json', // Set content-type ke JSON
+        },
+        body: json.encode({
           'nama_supplier': nama_supplier.text,
           'alamat': alamat.text,
           'no_telepon': no_telepon.text,
-        });
-    return respon.statusCode == 200; // Menyederhanakan pengecekan statusCode
+        }),
+      );
+
+      // Mengecek status code dan body dari response
+      if (response.statusCode == 200 && response.body.contains('Sukses')) {
+        return true; // Jika berhasil
+      } else {
+        return false; // Jika gagal
+      }
+    } catch (e) {
+      print("Error: $e");
+      return false; // Jika terjadi error
+    }
   }
 
   @override
@@ -55,7 +71,7 @@ class _TambahSupplierState extends State<TambahSupplier> {
                   if (value!.isEmpty) {
                     return "Nama supplier tidak boleh kosong!";
                   }
-                  return null; // Perbaikan: harus ada return null jika valid
+                  return null; // Return null jika valid
                 },
               ),
               const SizedBox(height: 10),
@@ -71,7 +87,7 @@ class _TambahSupplierState extends State<TambahSupplier> {
                   if (value!.isEmpty) {
                     return "Alamat tidak boleh kosong!";
                   }
-                  return null; // Perbaikan: harus ada return null jika valid
+                  return null; // Return null jika valid
                 },
               ),
               const SizedBox(height: 10),
@@ -87,7 +103,7 @@ class _TambahSupplierState extends State<TambahSupplier> {
                   if (value!.isEmpty) {
                     return "Nomor Telepon tidak boleh kosong!";
                   }
-                  return null; // Perbaikan: harus ada return null jika valid
+                  return null; // Return null jika valid
                 },
               ),
               const SizedBox(height: 10),

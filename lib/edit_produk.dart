@@ -1,3 +1,4 @@
+import 'dart:convert'; // Import dart:convert untuk JSON encoding
 import 'package:app_produk/halaman_produk.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -20,14 +21,30 @@ class _UbahProdukState extends State<UbahProduk> {
   TextEditingController harga_produk = TextEditingController();
 
   Future<bool> _ubah() async {
-    final respon = await http
-        .post(Uri.parse('http://10.0.2.2/api_mobile/produk/edit.php'), body: {
-      'id_produk': id_produk.text,
-      'nama_produk': nama_produk.text,
-      'harga_produk': harga_produk.text,
-    });
+    try {
+      // Mengirim request POST dengan body JSON
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2/api_mobile/produk/edit.php'),
+        headers: {
+          'Content-Type': 'application/json', // Set content-type ke JSON
+        },
+        body: json.encode({
+          'id_produk': id_produk.text,
+          'nama_produk': nama_produk.text,
+          'harga_produk': harga_produk.text,
+        }),
+      );
 
-    return respon.statusCode == 200; // Menyederhanakan pengecekan statusCode
+      // Mengecek status code dan response body
+      if (response.statusCode == 200 && response.body.contains('Sukses')) {
+        return true; // Jika berhasil
+      } else {
+        return false; // Jika gagal
+      }
+    } catch (e) {
+      print("Error: $e");
+      return false; // Jika terjadi error
+    }
   }
 
   @override
@@ -43,8 +60,7 @@ class _UbahProdukState extends State<UbahProduk> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ubah Produk',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Ubah Produk', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.teal[300],
         foregroundColor: Colors.white,
       ),
@@ -60,7 +76,8 @@ class _UbahProdukState extends State<UbahProduk> {
                 decoration: InputDecoration(
                   hintText: 'Nama Produk',
                   border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 validator: (value) {
                   if (value!.isEmpty) return "Nama produk tidak boleh kosong!";
@@ -75,7 +92,8 @@ class _UbahProdukState extends State<UbahProduk> {
                 decoration: InputDecoration(
                   hintText: 'Harga Produk',
                   border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [
@@ -83,8 +101,9 @@ class _UbahProdukState extends State<UbahProduk> {
                 ], // Hanya menerima angka
                 validator: (value) {
                   if (value!.isEmpty) return "Harga produk tidak boleh kosong!";
-                  if (int.tryParse(value) == null)
+                  if (int.tryParse(value) == null) {
                     return "Harga produk harus berupa angka!";
+                  }
                   return null;
                 },
               ),
@@ -96,7 +115,8 @@ class _UbahProdukState extends State<UbahProduk> {
                   backgroundColor: Colors.teal[400],
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 onPressed: () {
                   if (formKey.currentState!.validate()) {

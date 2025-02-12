@@ -32,11 +32,22 @@ dependencies:
     sdk: flutter
   http: ^1.2.2
   intl: ^0.20.1
-
+  flutter_native_splash: ^2.4.4
+  flutter_launcher_icons: ^0.14.3
+  path_provider: ^2.1.5
+  excel: ^4.0.6
+  pdf: ^3.11.2
+  printing: ^5.14.0
+  flutter_pdfview: ^1.4.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+
+flutter_icons:
+android: true # Mengaktifkan untuk Android
+ios: true     # Mengaktifkan untuk iOS
+image_path: "assets/icons/app_icon.png"  # Ganti dengan path gambar logo Anda
 
 dev_dependencies:
   flutter_test:
@@ -65,6 +76,7 @@ flutter:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
@@ -90,3 +102,11 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+#flutter_native_splash:
+#color: "#ffffff"  # Warna latar belakang splash screen
+#image: assets/img/splash_screen.png  # Logo atau gambar splash
+#android: true  # Mengaktifkan untuk Android
+#ios: false     # Menonaktifkan untuk iOS (jika hanya untuk Android)
+
+
+

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:app_produk/edit_supplier.dart';
+import 'package:app_produk/exp_to_pdf.dart';  // pastikan ekspor PDF sudah benar
 import 'package:app_produk/tambah_supplier.dart';
 import 'package:app_produk/detail_supplier.dart';
 import 'package:app_produk/halaman_produk.dart';
@@ -20,8 +21,7 @@ class _HalamanSupplierState extends State<HalamanSupplier> {
   // Fungsi untuk mendapatkan data supplier
   Future _getdata() async {
     try {
-      final respon = await http
-          .get(Uri.parse('http://10.0.2.2/api_mobile/supplier/read.php'));
+      final respon = await http.get(Uri.parse('http://10.0.2.2/api_mobile/supplier/read.php'));
       if (respon.statusCode == 200) {
         final data = jsonDecode(respon.body);
         setState(() {
@@ -72,15 +72,20 @@ class _HalamanSupplierState extends State<HalamanSupplier> {
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
-              // Navigasi ke halaman Tambah Supplier
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => TambahSupplier()),
+                MaterialPageRoute(builder: (context) => const TambahSupplier()),
               ).then((_) {
                 setState(() {
-                  _getdata(); // Memperbarui data supplier setelah menambahkan supplier
+                  _getdata();
                 });
               });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            onPressed: () {
+              exportToPDF(context, _listdata); // Mengubah exportToPDF untuk menerima context
             },
           ),
         ],
@@ -124,13 +129,10 @@ class _HalamanSupplierState extends State<HalamanSupplier> {
                                 MaterialPageRoute(
                                   builder: (context) => UbahSupplier(
                                     ListData: {
-                                      'id_supplier': _listdata[index]
-                                          ['id_supplier'],
-                                      'nama_supplier': _listdata[index]
-                                          ['nama_supplier'],
+                                      'id_supplier': _listdata[index]['id_supplier'],
+                                      'nama_supplier': _listdata[index]['nama_supplier'],
                                       'alamat': _listdata[index]['alamat'],
-                                      'no_telepon': _listdata[index]
-                                          ['no_telepon'],
+                                      'no_telepon': _listdata[index]['no_telepon'],
                                     },
                                   ),
                                 ),
@@ -143,8 +145,7 @@ class _HalamanSupplierState extends State<HalamanSupplier> {
                               // Dialog konfirmasi penghapusan
                               showDialog(
                                 context: context,
-                                barrierDismissible:
-                                    false, // Tidak dapat ditutup di luar dialog
+                                barrierDismissible: false, // Tidak dapat ditutup di luar dialog
                                 builder: (context) {
                                   return AlertDialog(
                                     title: const Text('Konfirmasi Hapus'),
@@ -153,41 +154,31 @@ class _HalamanSupplierState extends State<HalamanSupplier> {
                                     actions: [
                                       TextButton(
                                         onPressed: () {
-                                          Navigator.of(context)
-                                              .pop(); // Menutup dialog
+                                          Navigator.of(context).pop(); // Menutup dialog
                                         },
                                         child: const Text('Batal'),
                                       ),
                                       TextButton(
                                         onPressed: () {
-                                          _hapus(_listdata[index]
-                                                  ['id_supplier'])
-                                              .then((value) {
-                                            Navigator.of(context)
-                                                .pop(); // Menutup dialog
+                                          _hapus(_listdata[index]['id_supplier']).then((value) {
+                                            Navigator.of(context).pop(); // Menutup dialog
                                             if (value) {
                                               setState(() {
                                                 _listdata.removeAt(index);
                                               });
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
+                                              ScaffoldMessenger.of(context).showSnackBar(
                                                 const SnackBar(
-                                                    content: Text(
-                                                        'Data supplier berhasil dihapus')),
+                                                    content: Text('Data supplier berhasil dihapus')),
                                               );
                                             } else {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
+                                              ScaffoldMessenger.of(context).showSnackBar(
                                                 const SnackBar(
-                                                    content: Text(
-                                                        'Gagal menghapus data supplier')),
+                                                    content: Text('Gagal menghapus data supplier')),
                                               );
                                             }
                                           });
                                         },
-                                        child: const Text('Hapus',
-                                            style:
-                                                TextStyle(color: Colors.red)),
+                                        child: const Text('Hapus', style: TextStyle(color: Colors.red)),
                                       ),
                                     ],
                                   );
@@ -220,7 +211,7 @@ class _HalamanSupplierState extends State<HalamanSupplier> {
           if (index == 0) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => HalamanProduk()),
+              MaterialPageRoute(builder: (context) => const HalamanProduk()),
             );
           } else {
             // Tetap di halaman supplier

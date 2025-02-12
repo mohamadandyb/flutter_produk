@@ -71,12 +71,12 @@ class _HalamanProdukState extends State<HalamanProduk> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(Icons.add),
+            icon: const Icon(Icons.add),
             onPressed: () {
               // Navigasi ke halaman Tambah Produk
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => TambahProduk()),
+                MaterialPageRoute(builder: (context) => const TambahProduk()),
               ).then((_) {
                 // Memperbarui data produk setelah menambahkan produk
                 setState(() {
@@ -221,7 +221,7 @@ class _HalamanProdukState extends State<HalamanProduk> {
           if (index == 1) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => HalamanSupplier()),
+              MaterialPageRoute(builder: (context) => const HalamanSupplier()),
             );
           } else {
             // Tetap di halaman produk
