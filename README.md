@@ -1,7 +1,8 @@
 # app_produk
 
 Preview
-![image](https://github.com/user-attachments/assets/8ae3eb28-14a2-4775-8b5a-d8228360a568)
+
+![{B02C1D0F-341E-46D5-81A8-FD32440B6C22}](https://github.com/user-attachments/assets/596a8089-d624-4ccc-8d9f-51a2f8363ed6)
 
 
 Nama : Mohamad Andy Baharuddin
