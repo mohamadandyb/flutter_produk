@@ -1,11 +1,11 @@
-import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:app_produk/edit_supplier.dart';
-import 'package:app_produk/exp_to_pdf.dart';  // pastikan ekspor PDF sudah benar
+import 'package:app_produk/exp_to_pdf.dart';  
 import 'package:app_produk/tambah_supplier.dart';
 import 'package:app_produk/detail_supplier.dart';
 import 'package:app_produk/halaman_produk.dart';
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:app_produk/supplier.dart';
+import 'package:app_produk/database_helper.dart';
 
 class HalamanSupplier extends StatefulWidget {
   const HalamanSupplier({super.key});
@@ -15,47 +15,35 @@ class HalamanSupplier extends StatefulWidget {
 }
 
 class _HalamanSupplierState extends State<HalamanSupplier> {
-  List _listdata = [];
+  List<Supplier> _listdata = [];
   bool _loading = true;
 
-  // Fungsi untuk mendapatkan data supplier
-  Future _getdata() async {
-    try {
-      final respon = await http.get(Uri.parse('http://10.0.2.2/api_mobile/supplier/read.php'));
-      if (respon.statusCode == 200) {
-        final data = jsonDecode(respon.body);
-        setState(() {
-          _listdata = data;
-          _loading = false;
-        });
-      }
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  // Fungsi untuk menghapus supplier
-  Future<bool> _hapus(String id) async {
-    try {
-      final respon = await http.post(
-        Uri.parse('http://10.0.2.2/api_mobile/supplier/delete.php'),
-        body: {'id_supplier': id},
-      );
-      if (respon.statusCode == 200) {
-        return true;
-      } else {
-        return false;
-      }
-    } catch (e) {
-      print(e);
-      return false;
-    }
+  // Fungsi untuk mendapatkan data supplier dari database SQLite
+  Future<void> _getdata() async {
+    final dbHelper = DatabaseHelper.instance;
+    final suppliers = await dbHelper.getAllSuppliers();
+    setState(() {
+      _listdata = suppliers;
+      _loading = false;
+    });
   }
 
   @override
   void initState() {
     super.initState();
     _getdata();
+  }
+
+  // Fungsi untuk menghapus supplier
+  Future<bool> _hapus(int id) async {
+    try {
+      final dbHelper = DatabaseHelper.instance;
+      final result = await dbHelper.deleteSupplier(id);
+      return result > 0;
+    } catch (e) {
+      print(e);
+      return false;
+    }
   }
 
   @override
@@ -76,16 +64,14 @@ class _HalamanSupplierState extends State<HalamanSupplier> {
                 context,
                 MaterialPageRoute(builder: (context) => const TambahSupplier()),
               ).then((_) {
-                setState(() {
-                  _getdata();
-                });
+                _getdata(); // Memperbarui data setelah menambahkan supplier
               });
             },
           ),
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
             onPressed: () {
-              exportToPDF(context, _listdata); // Mengubah exportToPDF untuk menerima context
+              exportToPDF(context, _listdata); // Mengekspor data ke PDF
             },
           ),
         ],
@@ -95,28 +81,24 @@ class _HalamanSupplierState extends State<HalamanSupplier> {
           : ListView.builder(
               itemCount: _listdata.length,
               itemBuilder: (context, index) {
-                var alamat = _listdata[index]['alamat'];
-                var noTelepon = _listdata[index]['no_telepon'].toString();
-
+                var supplier = _listdata[index];
                 return Card(
                   child: InkWell(
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => DetailSupplier(
-                            ListData: _listdata[index],
-                          ),
+                          builder: (context) => DetailSupplier(supplier: supplier),
                         ),
                       );
                     },
                     child: ListTile(
-                      title: Text(_listdata[index]['nama_supplier']),
+                      title: Text(supplier.nama),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Alamat: $alamat'),
-                          Text('No Telepon: $noTelepon'),
+                          Text('Alamat: ${supplier.alamat}'),
+                          Text('No Telepon: ${supplier.kontak}'),
                         ],
                       ),
                       trailing: Row(
@@ -127,16 +109,11 @@ class _HalamanSupplierState extends State<HalamanSupplier> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => UbahSupplier(
-                                    ListData: {
-                                      'id_supplier': _listdata[index]['id_supplier'],
-                                      'nama_supplier': _listdata[index]['nama_supplier'],
-                                      'alamat': _listdata[index]['alamat'],
-                                      'no_telepon': _listdata[index]['no_telepon'],
-                                    },
-                                  ),
+                                  builder: (context) => UbahSupplier(supplier: supplier),
                                 ),
-                              );
+                              ).then((_) {
+                                _getdata(); // Memperbarui data setelah editing
+                              });
                             },
                             icon: const Icon(Icons.edit, color: Colors.blue),
                           ),
@@ -145,12 +122,11 @@ class _HalamanSupplierState extends State<HalamanSupplier> {
                               // Dialog konfirmasi penghapusan
                               showDialog(
                                 context: context,
-                                barrierDismissible: false, // Tidak dapat ditutup di luar dialog
+                                barrierDismissible: false,
                                 builder: (context) {
                                   return AlertDialog(
                                     title: const Text('Konfirmasi Hapus'),
-                                    content: const Text(
-                                        'Apakah Anda yakin ingin menghapus supplier ini?'),
+                                    content: const Text('Apakah Anda yakin ingin menghapus supplier ini?'),
                                     actions: [
                                       TextButton(
                                         onPressed: () {
@@ -160,20 +136,18 @@ class _HalamanSupplierState extends State<HalamanSupplier> {
                                       ),
                                       TextButton(
                                         onPressed: () {
-                                          _hapus(_listdata[index]['id_supplier']).then((value) {
+                                          _hapus(supplier.id_supplier).then((value) {
                                             Navigator.of(context).pop(); // Menutup dialog
                                             if (value) {
                                               setState(() {
                                                 _listdata.removeAt(index);
                                               });
                                               ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                    content: Text('Data supplier berhasil dihapus')),
+                                                const SnackBar(content: Text('Data supplier berhasil dihapus')),
                                               );
                                             } else {
                                               ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                    content: Text('Gagal menghapus data supplier')),
+                                                const SnackBar(content: Text('Gagal menghapus data supplier')),
                                               );
                                             }
                                           });
@@ -213,8 +187,6 @@ class _HalamanSupplierState extends State<HalamanSupplier> {
               context,
               MaterialPageRoute(builder: (context) => const HalamanProduk()),
             );
-          } else {
-            // Tetap di halaman supplier
           }
         },
       ),

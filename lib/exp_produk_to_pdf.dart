@@ -1,28 +1,26 @@
-import 'dart:io'; // Import dart:io untuk penggunaan File
+import 'dart:io'; // Import untuk penggunaan File
 import 'package:path_provider/path_provider.dart'; // Import untuk pengelolaan direktori
 import 'package:pdf/widgets.dart' as pw; // Import untuk PDF
 import 'package:flutter/material.dart'; // Import untuk BuildContext dan widget
-import 'package:flutter_pdfview/flutter_pdfview.dart'; // Pastikan untuk mengimpor PDFView
-import 'package:app_produk/supplier.dart'; // Pastikan untuk mengimpor model Supplier
+import 'package:flutter_pdfview/flutter_pdfview.dart'; // Import untuk PDFView
+import 'package:app_produk/produk.dart'; // Pastikan untuk mengimpor model Produk
 
-Future<void> exportToPDF(BuildContext context, List<Supplier> suppliers) async {
+Future<void> exportprodukToPDF(BuildContext context, List<Produk> products) async {
   final pdf = pw.Document();
   
-  // Menambahkan halaman baru ke PDF
   pdf.addPage(pw.Page(
     build: (pw.Context context) {
       return pw.Column(
         children: [
-          pw.Text('Laporan Data Supplier', style: const pw.TextStyle(fontSize: 20)),
+          pw.Text('Laporan Data Produk', style: const pw.TextStyle(fontSize: 20)),
           pw.SizedBox(height: 20),
           pw.TableHelper.fromTextArray(
-            headers: ['ID Supplier', 'Nama Supplier', 'Alamat', 'No Telepon'],
-            data: suppliers.map((supplier) {
+            headers: ['ID Produk', 'Nama Produk', 'Harga'],
+            data: products.map((product) {
               return [
-                supplier.id_supplier, // Menggunakan getter
-                supplier.nama,        // Menggunakan getter
-                supplier.alamat,      // Menggunakan getter
-                supplier.kontak,      // Menggunakan getter
+                product.id_produk, // Menggunakan getter
+                product.nama_produk, // Menggunakan getter
+                product.harga_produk, // Menggunakan getter
               ];
             }).toList(),
           ),
@@ -30,10 +28,10 @@ Future<void> exportToPDF(BuildContext context, List<Supplier> suppliers) async {
       );
     },
   ));
-  
+
   // Menyimpan file PDF ke perangkat
   final directory = await getExternalStorageDirectory();
-  final file = File('${directory?.path}/data_supplier.pdf');
+  final file = File('${directory?.path}/data_produk.pdf');
   await file.writeAsBytes(await pdf.save());
 
   // Menampilkan pesan bahwa ekspor berhasil

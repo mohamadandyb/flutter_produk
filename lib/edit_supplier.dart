@@ -1,11 +1,11 @@
-import 'dart:convert'; // Import dart:convert untuk JSON encoding
+import 'package:app_produk/database_helper.dart';
 import 'package:app_produk/halaman_supplier.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'supplier.dart'; // Pastikan model Supplier diimpor
 
 class UbahSupplier extends StatefulWidget {
-  final Map ListData;
-  const UbahSupplier({super.key, required this.ListData});
+  final Supplier supplier; // menggunakan objek Supplier langsung
+  const UbahSupplier({super.key, required this.supplier});
 
   @override
   State<UbahSupplier> createState() => _UbahSupplierState();
@@ -13,56 +13,48 @@ class UbahSupplier extends StatefulWidget {
 
 class _UbahSupplierState extends State<UbahSupplier> {
   final formKey = GlobalKey<FormState>();
-
+  
   // Menyimpan controller untuk setiap input field
   TextEditingController id_supplier = TextEditingController();
   TextEditingController nama_supplier = TextEditingController();
   TextEditingController alamat = TextEditingController();
   TextEditingController no_telepon = TextEditingController();
 
-  Future<bool> _ubah() async {
-    try {
-      // Mengirim request POST dengan body JSON
-      final response = await http.post(
-        Uri.parse('http://10.0.2.2/api_mobile/supplier/edit.php'),
-        headers: {
-          'Content-Type': 'application/json', // Set content-type ke JSON
-        },
-        body: json.encode({
-          'id_supplier': id_supplier.text,
-          'nama_supplier': nama_supplier.text,
-          'alamat': alamat.text,
-          'no_telepon': no_telepon.text,
-        }),
-      );
-
-      // Mengecek status code dan response body
-      if (response.statusCode == 200 && response.body.contains('Sukses')) {
-        return true; // Jika berhasil
-      } else {
-        return false; // Jika gagal
-      }
-    } catch (e) {
-      print("Error: $e");
-      return false; // Jika terjadi error
-    }
-  }
-
   @override
   void initState() {
     super.initState();
     // Mengisi controller dengan data yang diterima
-    id_supplier.text = widget.ListData['id_supplier'];
-    nama_supplier.text = widget.ListData['nama_supplier'];
-    alamat.text = widget.ListData['alamat'];
-    no_telepon.text = widget.ListData['no_telepon'].toString();
+    id_supplier.text = widget.supplier.id_supplier.toString();
+    nama_supplier.text = widget.supplier.nama;
+    alamat.text = widget.supplier.alamat;
+    no_telepon.text = widget.supplier.kontak; // menggunakan kontak untuk No Telepon
+  }
+
+  Future<bool> _ubah() async {
+    try {
+      final updatedSupplier = Supplier(
+        id_supplier: int.parse(id_supplier.text), // Parsing ID menjadi integer
+        nama: nama_supplier.text,
+        alamat: alamat.text,
+        kontak: no_telepon.text,
+      );
+      final dbHelper = DatabaseHelper.instance;
+      final result = await dbHelper.updateSupplier(updatedSupplier); // Menggunakan DatabaseHelper
+      return result > 0; // return true jika berhasil
+    } catch (e) {
+      print("Error: $e");
+      return false; // Mengembalikan false jika terjadi error
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ubah Data Supplier', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Ubah Data Supplier',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.blue[700],
         foregroundColor: Colors.white,
       ),
@@ -89,7 +81,6 @@ class _UbahSupplierState extends State<UbahSupplier> {
                 },
               ),
               const SizedBox(height: 10),
-
               // Field untuk Alamat
               TextFormField(
                 controller: alamat,
@@ -107,7 +98,6 @@ class _UbahSupplierState extends State<UbahSupplier> {
                 },
               ),
               const SizedBox(height: 10),
-
               // Field untuk No Telepon
               TextFormField(
                 controller: no_telepon,
@@ -126,7 +116,6 @@ class _UbahSupplierState extends State<UbahSupplier> {
                 },
               ),
               const SizedBox(height: 10),
-
               // Tombol Ubah
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -145,7 +134,6 @@ class _UbahSupplierState extends State<UbahSupplier> {
                             : 'Data gagal diubah'),
                       );
                       ScaffoldMessenger.of(context).showSnackBar(snackBar);
-
                       // Jika berhasil, kembali ke halaman supplier
                       if (value) {
                         Navigator.pushAndRemoveUntil(

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:app_produk/supplier.dart'; // Pastikan mengimpor model Supplier
 
 class DetailSupplier extends StatelessWidget {
-  final Map<String, dynamic>
-      ListData; // Mendeklarasikan tipe data yang lebih jelas
-
-  const DetailSupplier({super.key, required this.ListData});
+  final Supplier supplier; // Menggunakan objek Supplier langsung
+  
+  const DetailSupplier({super.key, required this.supplier});
 
   @override
   Widget build(BuildContext context) {
@@ -24,24 +24,23 @@ class DetailSupplier extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start, // Mengatur posisi teks dari kiri
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ListTile(
                   title: const Text('Id Supplier'),
-                  subtitle: Text(ListData['id_supplier'].toString()),
+                  subtitle: Text(supplier.id_supplier.toString()), // Mengakses id dari objek Supplier
                 ),
                 ListTile(
                   title: const Text('Nama Supplier'),
-                  subtitle: Text(ListData['nama_supplier']),
+                  subtitle: Text(supplier.nama), // Mengakses nama dari objek Supplier
                 ),
                 ListTile(
                   title: const Text('Alamat'),
-                  subtitle: Text(ListData['alamat']),
+                  subtitle: Text(supplier.alamat), // Mengakses alamat dari objek Supplier
                 ),
                 ListTile(
                   title: const Text('No Telepon'),
-                  subtitle: Text(ListData['no_telepon'].toString()),
+                  subtitle: Text(supplier.kontak), // Mengakses kontak dari objek Supplier
                 ),
               ],
             ),

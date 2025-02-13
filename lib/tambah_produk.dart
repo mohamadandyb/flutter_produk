@@ -1,7 +1,7 @@
+import 'package:app_produk/database_helper.dart'; // Import DatabaseHelper
 import 'package:app_produk/halaman_produk.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert'; // Import untuk encoding JSON
+import 'produk.dart'; // Pastikan untuk import model Produk
 
 class TambahProduk extends StatefulWidget {
   const TambahProduk({super.key});
@@ -17,25 +17,18 @@ class _TambahProdukState extends State<TambahProduk> {
 
   Future<bool> _simpan() async {
     try {
-      final response = await http.post(
-        Uri.parse('http://10.0.2.2/api_mobile/produk/create.php'),
-        headers: {
-          'Content-Type': 'application/json', // Menetapkan content-type ke JSON
-        },
-        body: json.encode({
-          'nama_produk': nama_produk.text,
-          'harga_produk': harga_produk.text,
-        }),
+      final dbHelper = DatabaseHelper.instance; // Gunakan instance untuk mengakses DatabaseHelper
+      // Membuat objek Produk dengan data yang diinputkan
+      final produk = Produk(
+        id_produk: 0,  // id akan ditentukan oleh SQLite secara otomatis
+        nama_produk: nama_produk.text,
+        harga_produk: int.tryParse(harga_produk.text) ?? 0,
       );
 
-      // Mengecek jika widget masih aktif (mounted)
-      if (!mounted) return false;
+      // Menyimpan data produk ke database
+      int result = await dbHelper.insertProduk(produk);
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
-      // Mengembalikan true jika statusCode 200 dan body mengandung "Sukses"
-      return response.statusCode == 200 && response.body.contains('Sukses');
+      return result > 0; // Mengembalikan true jika berhasil menyimpan
     } catch (e) {
       print('Error: $e');
       return false;

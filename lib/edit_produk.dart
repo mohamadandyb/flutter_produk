@@ -1,59 +1,46 @@
-import 'dart:convert'; // Import dart:convert untuk JSON encoding
+import 'package:app_produk/database_helper.dart';
 import 'package:app_produk/halaman_produk.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart'; // Import FilteringTextInputFormatter
+import 'produk.dart';
 
-class UbahProduk extends StatefulWidget {
-  final Map ListData;
-  const UbahProduk({super.key, required this.ListData});
+class UbahProduk extends StatefulWidget { // Mengubah menjadi StatefulWidget
+  final Produk produk; // Mengambil objek Produk langsung
+  const UbahProduk({super.key, required this.produk}); // Modifikasi Key
 
   @override
-  State<UbahProduk> createState() => _UbahProdukState();
+  _UbahProdukState createState() => _UbahProdukState();
 }
 
 class _UbahProdukState extends State<UbahProduk> {
   final formKey = GlobalKey<FormState>();
 
-  // Menyimpan controller untuk setiap input field
   TextEditingController id_produk = TextEditingController();
   TextEditingController nama_produk = TextEditingController();
   TextEditingController harga_produk = TextEditingController();
-
-  Future<bool> _ubah() async {
-    try {
-      // Mengirim request POST dengan body JSON
-      final response = await http.post(
-        Uri.parse('http://10.0.2.2/api_mobile/produk/edit.php'),
-        headers: {
-          'Content-Type': 'application/json', // Set content-type ke JSON
-        },
-        body: json.encode({
-          'id_produk': id_produk.text,
-          'nama_produk': nama_produk.text,
-          'harga_produk': harga_produk.text,
-        }),
-      );
-
-      // Mengecek status code dan response body
-      if (response.statusCode == 200 && response.body.contains('Sukses')) {
-        return true; // Jika berhasil
-      } else {
-        return false; // Jika gagal
-      }
-    } catch (e) {
-      print("Error: $e");
-      return false; // Jika terjadi error
-    }
-  }
 
   @override
   void initState() {
     super.initState();
     // Mengisi controller dengan data yang diterima
-    id_produk.text = widget.ListData['id_produk'];
-    nama_produk.text = widget.ListData['nama_produk'];
-    harga_produk.text = widget.ListData['harga_produk'].toString();
+    id_produk.text = widget.produk.id_produk.toString();
+    nama_produk.text = widget.produk.nama_produk;
+    harga_produk.text = widget.produk.harga_produk.toString();
+  }
+
+  Future<bool> _ubah() async {
+    try {
+      final produk = Produk(
+        id_produk: int.tryParse(id_produk.text) ?? 0,
+        nama_produk: nama_produk.text,
+        harga_produk: int.tryParse(harga_produk.text) ?? 0,
+      );
+      int result = await DatabaseHelper.instance.updateProduk(produk);
+      return result > 0;
+    } catch (e) {
+      print("Error: $e");
+      return false;
+    }
   }
 
   @override
@@ -70,6 +57,19 @@ class _UbahProdukState extends State<UbahProduk> {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
+              // Field untuk ID Produk (tidak bisa diubah)
+              TextFormField(
+                controller: id_produk,
+                decoration: InputDecoration(
+                  hintText: 'ID Produk',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                readOnly: true, // ID produk tidak bisa diubah
+              ),
+              const SizedBox(height: 10),
+
               // Field untuk Nama Produk
               TextFormField(
                 controller: nama_produk,
@@ -96,9 +96,7 @@ class _UbahProdukState extends State<UbahProduk> {
                   ),
                 ),
                 keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly
-                ], // Hanya menerima angka
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: (value) {
                   if (value!.isEmpty) return "Harga produk tidak boleh kosong!";
                   if (int.tryParse(value) == null) {
@@ -122,18 +120,14 @@ class _UbahProdukState extends State<UbahProduk> {
                   if (formKey.currentState!.validate()) {
                     _ubah().then((value) {
                       final snackBar = SnackBar(
-                        content: Text(value
-                            ? 'Data berhasil diubah'
-                            : 'Data gagal diubah'),
+                        content: Text(value ? 'Data berhasil diubah' : 'Data gagal diubah'),
                       );
                       ScaffoldMessenger.of(context).showSnackBar(snackBar);
-
                       // Jika berhasil, kembali ke halaman produk
                       if (value) {
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(
-                              builder: (context) => const HalamanProduk()),
+                          MaterialPageRoute(builder: (context) => const HalamanProduk()),
                           (route) => false,
                         );
                       }

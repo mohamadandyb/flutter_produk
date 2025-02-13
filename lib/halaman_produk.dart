@@ -1,11 +1,12 @@
-import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:app_produk/database_helper.dart';
 import 'package:app_produk/edit_produk.dart';
 import 'package:app_produk/tambah_produk.dart';
 import 'package:app_produk/detail_produk.dart';
 import 'package:app_produk/halaman_supplier.dart';
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
+import 'package:app_produk/produk.dart';
+import 'package:app_produk/exp_produk_to_pdf.dart'; // Import untuk fungsi ekspor PDF
 
 class HalamanProduk extends StatefulWidget {
   const HalamanProduk({super.key});
@@ -15,48 +16,41 @@ class HalamanProduk extends StatefulWidget {
 }
 
 class _HalamanProdukState extends State<HalamanProduk> {
-  List _listdata = [];
+  List<Map<String, dynamic>> _listdata = [];
   bool _loading = true;
 
-  // Fungsi untuk mendapatkan data produk
-  Future _getdata() async {
-    try {
-      final respon = await http
-          .get(Uri.parse('http://10.0.2.2/api_mobile/produk/read.php'));
-      if (respon.statusCode == 200) {
-        final data = jsonDecode(respon.body);
-        setState(() {
-          _listdata = data;
-          _loading = false;
-        });
-      }
-    } catch (e) {
-      print(e);
-    }
+  // Fungsi untuk mendapatkan data produk dari database
+  Future<void> _getdata() async {
+    final dbHelper = DatabaseHelper.instance;
+    final List<Map<String, dynamic>> data = await dbHelper.getAllProduk();
+    setState(() {
+      _listdata = data;
+      _loading = false;
+    });
   }
 
   // Fungsi untuk menghapus produk
-  Future<bool> _hapus(String id) async {
-    try {
-      final respon = await http.post(
-        Uri.parse('http://10.0.2.2/api_mobile/produk/delete.php'),
-        body: {'id_produk': id},
+  Future<void> _hapus(int id) async {
+    final dbHelper = DatabaseHelper.instance;
+    int result = await dbHelper.deleteProduk(id);
+    if (result > 0) {
+      setState(() {
+        _listdata.removeWhere((item) => item['id_produk'] == id);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Produk berhasil dihapus')),
       );
-      if (respon.statusCode == 200) {
-        return true;
-      } else {
-        return false;
-      }
-    } catch (e) {
-      print(e);
-      return false;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal menghapus produk')),
+      );
     }
   }
 
   @override
   void initState() {
     super.initState();
-    _getdata();
+    _getdata(); // Ambil data produk saat halaman pertama kali dibuka
   }
 
   @override
@@ -78,11 +72,15 @@ class _HalamanProdukState extends State<HalamanProduk> {
                 context,
                 MaterialPageRoute(builder: (context) => const TambahProduk()),
               ).then((_) {
-                // Memperbarui data produk setelah menambahkan produk
-                setState(() {
-                  _getdata();
-                });
+                _getdata(); // Memperbarui data produk setelah menambahkan produk
               });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            onPressed: () {
+              // Mengonversi data produk dari Map ke List<Produk>
+              exportprodukToPDF(context, _listdata.map((item) => Produk.fromMap(item)).toList());
             },
           ),
         ],
@@ -92,12 +90,10 @@ class _HalamanProdukState extends State<HalamanProduk> {
           : ListView.builder(
               itemCount: _listdata.length,
               itemBuilder: (context, index) {
-                var harga =
-                    int.tryParse(_listdata[index]['harga_produk'].toString());
+                var harga = _listdata[index]['harga_produk'];
                 var formattedHarga = harga != null
                     ? NumberFormat('#,###', 'id_ID').format(harga)
                     : 'Invalid';
-
                 return Card(
                   child: InkWell(
                     onTap: () {
@@ -105,7 +101,7 @@ class _HalamanProdukState extends State<HalamanProduk> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => DetailProduk(
-                            ListData: _listdata[index],
+                            produk: _listdata[index], // Menyesuaikan dengan parameter produk
                           ),
                         ),
                       );
@@ -125,17 +121,12 @@ class _HalamanProdukState extends State<HalamanProduk> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => UbahProduk(
-                                    ListData: {
-                                      'id_produk': _listdata[index]
-                                          ['id_produk'],
-                                      'nama_produk': _listdata[index]
-                                          ['nama_produk'],
-                                      'harga_produk': _listdata[index]
-                                          ['harga_produk'],
-                                    },
+                                    produk: Produk.fromMap(_listdata[index]),
                                   ),
                                 ),
-                              );
+                              ).then((_) {
+                                _getdata(); // Memperbarui data setelah perubahan
+                              });
                             },
                             icon: const Icon(Icons.edit, color: Colors.teal),
                           ),
@@ -144,51 +135,25 @@ class _HalamanProdukState extends State<HalamanProduk> {
                               // Dialog konfirmasi penghapusan
                               showDialog(
                                 context: context,
-                                barrierDismissible:
-                                    false, // Tidak dapat ditutup di luar dialog
+                                barrierDismissible: false, // Tidak dapat ditutup di luar dialog
                                 builder: (context) {
                                   return AlertDialog(
                                     title: const Text('Konfirmasi Hapus'),
-                                    content: const Text(
-                                        'Apakah Anda yakin ingin menghapus produk ini?'),
+                                    content: const Text('Apakah Anda yakin ingin menghapus produk ini?'),
                                     actions: [
                                       TextButton(
                                         onPressed: () {
-                                          Navigator.of(context)
-                                              .pop(); // Menutup dialog
+                                          Navigator.of(context).pop(); // Menutup dialog
                                         },
                                         child: const Text('Batal'),
                                       ),
                                       TextButton(
                                         onPressed: () {
-                                          _hapus(_listdata[index]['id_produk'])
-                                              .then((value) {
-                                            Navigator.of(context)
-                                                .pop(); // Menutup dialog
-                                            if (value) {
-                                              setState(() {
-                                                _listdata.removeAt(
-                                                    index); // Menghapus produk dari list
-                                              });
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
-                                                    content: Text(
-                                                        'Produk berhasil dihapus')),
-                                              );
-                                            } else {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
-                                                    content: Text(
-                                                        'Gagal menghapus produk')),
-                                              );
-                                            }
+                                          _hapus(_listdata[index]['id_produk']).then((_) {
+                                            Navigator.of(context).pop(); // Menutup dialog
                                           });
                                         },
-                                        child: const Text('Hapus',
-                                            style:
-                                                TextStyle(color: Colors.red)),
+                                        child: const Text('Hapus', style: TextStyle(color: Colors.red)),
                                       ),
                                     ],
                                   );
@@ -223,8 +188,6 @@ class _HalamanProdukState extends State<HalamanProduk> {
               context,
               MaterialPageRoute(builder: (context) => const HalamanSupplier()),
             );
-          } else {
-            // Tetap di halaman produk
           }
         },
       ),

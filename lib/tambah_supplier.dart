@@ -1,7 +1,7 @@
-import 'dart:convert';  // Import dart:convert untuk JSON encoding
-import 'package:app_produk/halaman_supplier.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:app_produk/database_helper.dart'; // Pastikan untuk mengimpor DatabaseHelper
+import 'package:app_produk/supplier.dart'; // Pastikan untuk mengimpor model Supplier
+import 'halaman_supplier.dart';
 
 class TambahSupplier extends StatefulWidget {
   const TambahSupplier({super.key});
@@ -18,27 +18,19 @@ class _TambahSupplierState extends State<TambahSupplier> {
 
   Future<bool> _simpan() async {
     try {
-      final response = await http.post(
-        Uri.parse('http://10.0.2.2/api_mobile/supplier/create.php'),
-        headers: {
-          'Content-Type': 'application/json', // Set content-type ke JSON
-        },
-        body: json.encode({
-          'nama_supplier': nama_supplier.text,
-          'alamat': alamat.text,
-          'no_telepon': no_telepon.text,
-        }),
+      final newSupplier = Supplier(
+        id_supplier: 0, // ID akan diatur otomatis oleh database
+        nama: nama_supplier.text,
+        alamat: alamat.text,
+        kontak: no_telepon.text,
       );
 
-      // Mengecek status code dan body dari response
-      if (response.statusCode == 200 && response.body.contains('Sukses')) {
-        return true; // Jika berhasil
-      } else {
-        return false; // Jika gagal
-      }
+      final dbHelper = DatabaseHelper.instance;
+      final result = await dbHelper.insertSupplier(newSupplier); // Menggunakan DatabaseHelper
+      return result > 0; // Mengembalikan true jika berhasil
     } catch (e) {
       print("Error: $e");
-      return false; // Jika terjadi error
+      return false; // Mengembalikan false jika terjadi error
     }
   }
 
@@ -124,7 +116,7 @@ class _TambahSupplierState extends State<TambahSupplier> {
                             : 'Data gagal disimpan'),
                       );
                       ScaffoldMessenger.of(context).showSnackBar(snackBar);
-
+                      // Jika berhasil, kembali ke halaman supplier
                       if (value) {
                         Navigator.pushAndRemoveUntil(
                           context,

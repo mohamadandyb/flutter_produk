@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class DetailProduk extends StatelessWidget {
-  final Map<String, dynamic> ListData; // Mendeklarasikan tipe data yang lebih jelas
-
-  const DetailProduk({super.key, required this.ListData});
+  final Map<String, dynamic> produk; // Mengganti nama parameter ke 'produk'
+  
+  const DetailProduk({super.key, required this.produk}); // Menggunakan 'produk' di constructor
 
   @override
   Widget build(BuildContext context) {
     // Mengonversi harga dari string ke integer dan memformat dengan separator ribuan
-    var harga = int.tryParse(ListData['harga_produk'].toString());
+    var harga = int.tryParse(produk['harga_produk'].toString());
     var formattedHarga = harga != null 
       ? NumberFormat('#,###', 'id_ID').format(harga) 
       : 'Invalid';
@@ -34,11 +34,11 @@ class DetailProduk extends StatelessWidget {
               children: [
                 ListTile(
                   title: const Text('Id Produk'),
-                  subtitle: Text(ListData['id_produk'].toString()),
+                  subtitle: Text(produk['id_produk'].toString()),
                 ),
                 ListTile(
                   title: const Text('Nama Produk'),
-                  subtitle: Text(ListData['nama_produk']),
+                  subtitle: Text(produk['nama_produk']),
                 ),
                 ListTile(
                   title: const Text('Harga Produk'),
